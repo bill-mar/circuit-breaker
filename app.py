@@ -16,8 +16,8 @@ with st.sidebar:
     )
 
     if api_mode == "免费模式 - 硅基流动（推荐）":
-        st.info("✅ 使用硅基流动免费 API，无需 Key")
-        api_key = "sk-siliconflow-test"
+        st.info("✅ 使用硅基流动免费 API，Key 已预配置")
+        api_key = "sk-ojxvwlexqqzxagnzvpndnszqhxsrwinjcouzvkpgvptzjnco"
         base_url = "https://api.siliconflow.cn/v1"
         model_name = "deepseek-ai/DeepSeek-V3"
         st.markdown("""
