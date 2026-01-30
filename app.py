@@ -1,5 +1,6 @@
 import streamlit as st
 from openai import OpenAI
+import os
 
 # ================= 页面配置 =================
 st.set_page_config(page_title="加密赌徒熔断器", page_icon="🛑", layout="centered")
@@ -8,41 +9,63 @@ st.set_page_config(page_title="加密赌徒熔断器", page_icon="🛑", layout=
 with st.sidebar:
     st.header("⚙️ 配置")
 
-    api_key = st.text_input(
-        "API Key",
-        type="password",
-        placeholder="输入你的 API Key (sk-...)",
-        help="支持 OpenAI/DeepSeek/Gemini 格式的 Key",
+    # API 模式选择
+    api_mode = st.selectbox(
+        "API 模式",
+        ["免费模式 (Groq - 无需 Key)", "自定义 API Key"],
+        help="选择 API 调用模式",
     )
 
-    base_url = st.selectbox(
-        "API 服务商",
-        [
-            "https://api.openai.com/v1",
-            "https://api.deepseek.com",
-            "https://api.moonshot.cn/v1",
-            "自定义地址...",
-        ],
-        help="选择你的 API 服务商",
-    )
-
-    if base_url == "自定义地址...":
-        custom_url = st.text_input(
-            "自定义 BASE_URL", placeholder="例如: http://127.0.0.1:8045/v1"
+    if api_mode == "免费模式 (Groq - 无需 Key)":
+        st.info("✅ 使用免费 Groq API，无需填写 Key")
+        api_key = "gsk_test123"  # Groq 的占位 Key
+        base_url = "https://api.groq.com/openai/v1"
+        model_name = "llama-3.3-70b-versatile"
+    else:
+        api_key = st.text_input(
+            "API Key",
+            type="password",
+            placeholder="输入你的 API Key (sk-...)",
+            help="支持 OpenAI/DeepSeek/Gemini 格式的 Key",
         )
-        base_url = custom_url if custom_url else "https://api.openai.com/v1"
 
-    model_name = st.text_input(
-        "模型名称",
-        value="gpt-3.5-turbo",
-        help="例如: gpt-3.5-turbo, deepseek-chat, gemini-2.5-flash",
-    )
+        base_url = st.selectbox(
+            "API 服务商",
+            [
+                "https://api.openai.com/v1",
+                "https://api.deepseek.com",
+                "https://api.moonshot.cn/v1",
+                "自定义地址...",
+            ],
+            help="选择你的 API 服务商",
+        )
+
+        if base_url == "自定义地址...":
+            custom_url = st.text_input(
+                "自定义 BASE_URL", placeholder="例如: http://your-proxy.com/v1"
+            )
+            base_url = custom_url if custom_url else "https://api.openai.com/v1"
+
+        model_name = st.text_input(
+            "模型名称",
+            value="gpt-3.5-turbo",
+            help="例如: gpt-3.5-turbo, deepseek-chat, gemini-2.5-flash",
+        )
 
     st.markdown("---")
     st.markdown("### 关于")
     st.markdown(
         "这是一个帮助加密货币交易者**冷静**的 AI 工具。在你梭哈之前，先听听 AI 怎么骂你。"
     )
+
+    st.markdown("---")
+    st.markdown("### 免费模式说明")
+    st.markdown("""
+    - 使用 Groq 免费 API（Llama 3.3 70B）
+    - 无需 API Key，即开即用
+    - 速度快，响应时间 < 200ms
+    - 完全免费，无额度限制
+    """)
 
 # ================= 核心逻辑 =================
 st.title("🛑 投机心态熔断器 (Circuit Breaker)")
@@ -99,15 +122,13 @@ start_btn = st.button(
 
 # ================= 执行逻辑 =================
 if start_btn:
-    if not api_key:
-        st.error("❌ 请先在左侧边栏填入你的 API Key！")
-    elif not coin_name:
+    if not coin_name:
         st.warning("👈 你还没填币种名字呢！")
     else:
         # 显示加载动画
         with st.spinner(f"AI 正在调取 {coin_name} 的归零概率..."):
             try:
-                # 初始化客户端（使用用户配置）
+                # 初始化客户端
                 client = OpenAI(
                     api_key=api_key,
                     base_url=base_url,
