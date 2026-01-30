@@ -11,56 +11,56 @@ with st.sidebar:
     # API 模式选择
     api_mode = st.selectbox(
         "API 模式",
-        ["免费模式 - 硅基流动（推荐）", "免费模式 - 蓝莺 AI", "自定义 API Key"],
+        ["硅基流动（推荐）", "蓝莺 AI", "自定义 API Key"],
         help="选择 API 调用模式",
     )
 
-    if api_mode == "免费模式 - 硅基流动（推荐）":
-        st.info("✅ 使用硅基流动免费 API，Key 已预配置")
-        api_key = "sk-fkrtoftbsiohgjwnsipxbexlxauakylffkhdntymlbicsatl"
+    if api_mode == "硅基流动（推荐）":
         base_url = "https://api.siliconflow.cn/v1"
         model_name = "deepseek-ai/DeepSeek-V3"
+        if "SILICONFLOW_API_KEY" in st.secrets:
+            api_key = st.secrets["SILICONFLOW_API_KEY"]
+            st.success("✅ 已使用服务端 Key（无需填写）")
+        else:
+            st.info("ℹ️ 未配置服务端 Key，请填写你的硅基流动 Key")
+            api_key = st.text_input(
+                "硅基流动 API Key",
+                type="password",
+                placeholder="sk-...",
+            )
         st.markdown("""
         **硅基流动优势：**
         - 🇨🇳 国内直连，无需翻墙
-        - 💰 首月 100 万 Token 免费额度
-        - ⚡ 响应速度快
+        - 💰 价格低、速度快
         - 🤖 支持多种国产模型
-        
-        **注册教程：**
-        1. 访问：https://siliconflow.cn
-        2. 注册后进入控制台
-        3. 点击 "API密钥" → "生成新密钥"
-        4. 复制密钥并填入下方（如果有额度可填）
-        """)
-        siliconflow_key = st.text_input(
-            "硅基流动 API Key (可选)", type="password", placeholder="如有个人额度可填入"
-        )
-        if siliconflow_key:
-            api_key = siliconflow_key
 
-    elif api_mode == "免费模式 - 蓝莺 AI":
-        st.info("✅ 使用蓝莺 AI 免费 API，无需 Key")
-        # 蓝莺 AI 使用标准 OpenAI 格式，这里用占位符
-        api_key = "sk-lanying-test"
+        **服务端配置（推荐给多人共享）：**
+        - Streamlit Cloud → App Settings → Secrets
+        - 添加：`SILICONFLOW_API_KEY = "你的Key"`
+        """)
+
+    elif api_mode == "蓝莺 AI":
         base_url = "https://api.lanyingim.com/v1"
         model_name = "gpt-4o-mini"
+        if "LANYING_API_KEY" in st.secrets:
+            api_key = st.secrets["LANYING_API_KEY"]
+            st.success("✅ 已使用服务端 Key（无需填写）")
+        else:
+            st.info("ℹ️ 未配置服务端 Key，请填写你的蓝莺 AI Key")
+            api_key = st.text_input(
+                "蓝莺 AI API Key",
+                type="password",
+                placeholder="sk-...",
+            )
         st.markdown("""
         **蓝莺 AI 优势：**
         - 🇨🇳 国内直连，无需翻墙
-        - 💰 免费额度充足
         - 🚀 支持多种模型（GPT-4o, Claude, DeepSeek等）
-        
+
         **使用方式：**
         - 访问：https://api.lanyingim.com
-        - 使用标准 OpenAI 接口格式
-        - 无需注册，直接使用
+        - 获取个人 API Key
         """)
-        lanying_key = st.text_input(
-            "蓝莺 AI API Key (可选)", type="password", placeholder="如有个人额度可填入"
-        )
-        if lanying_key:
-            api_key = lanying_key
     else:
         api_key = st.text_input(
             "API Key",
@@ -120,7 +120,7 @@ SYSTEM_PROMPT = """
 # Task
 每当我告诉我"我想买 [币种] [金额]"时，必须触发【熔断程序】：
 
-1. 【胜率质问】：问我我在这个领域 7 年赚没赚到大钱？如果没有，凭什么觉得今天能赢？（每次用不同表达方式）
+1. 【胜率质问】：问我在这个领域混了多久、过去这些年到底赚没赚到钱？如果没有长期稳定盈利，凭什么觉得今天能赢？（每次用不同表达方式）
 2. 【生存时间换算】：
    - 获取我输入的金额（USD）
    - 按汇率 7.3 换算成人民币
@@ -135,6 +135,7 @@ SYSTEM_PROMPT = """
 - 每次回复必须随机切换人格风格
 - 不要重复使用完全相同的句子
 - 不要劝我"谨慎投资"，要直接骂醒我
+- 不要编造用户的从业年限或经历；若未提供年限，用泛化表述
 - 针对不同的币种，给出针对性的嘲讽（比如 MEME 币骂它是垃圾土狗，主流币骂我是在赌博）
 - 根据金额大小，调整骂的强度（金额越大，骂得越狠）
 - 加入一些随机的讽刺比喻、历史典故、金融数据等丰富内容
@@ -155,6 +156,13 @@ start_btn = st.button(
 if start_btn:
     if not coin_name:
         st.warning("👈 你还没填币种名字呢！")
+    elif not api_key:
+        st.error("❌ 请先配置 API Key！")
+        st.info("💡 你可以：")
+        st.markdown("""
+        - 在侧边栏填写个人 API Key
+        - 或在 Streamlit Cloud Secrets 配置 `SILICONFLOW_API_KEY` / `LANYING_API_KEY`
+        """)
     else:
         # 显示加载动画
         with st.spinner(f"AI 正在调取 {coin_name} 的归零概率..."):
@@ -190,29 +198,19 @@ if start_btn:
             except Exception as e:
                 error_msg = str(e)
                 if "401" in error_msg or "Invalid API Key" in error_msg:
-                    st.error(f"❌ API Key 无效！")
-                    if "硅基流动" in api_mode:
-                        st.warning("💡 硅基流动免费模式通常不需要填 Key")
-                    st.info("💡 如需个人额度，请：")
+                    st.error("❌ API Key 无效或未配置！")
+                    st.info("💡 解决方式：")
                     st.markdown("""
-                    **硅基流动：**
-                    1. 访问：https://siliconflow.cn
-                    2. 注册后进入控制台
-                    3. 点击 "API密钥" 生成密钥
-                    4. 填入 API Key
-                    
-                    **蓝莺 AI：**
-                    1. 访问：https://api.lanyingim.com
-                    2. 获取个人 API Key
-                    3. 填入 API Key
+                    - 在侧边栏填写正确的 API Key
+                    - 或在 Streamlit Cloud Secrets 中配置 `SILICONFLOW_API_KEY` / `LANYING_API_KEY`
                     """)
                 elif "403" in error_msg or "Forbidden" in error_msg:
                     st.error("❌ 访问被拒绝！")
                     st.warning("💡 可能原因：")
                     st.markdown("""
-                    - API 服务商对地区有限制（如 Groq）
-                    - 需要更换 API 服务商
-                    - 建议使用 **硅基流动** 或 **蓝莺 AI**（国内直连）
+                    - 余额不足或权限不足
+                    - 该模型需要实名认证/授权
+                    - API 服务商对地区有限制
                     """)
                 else:
                     st.error(f"发生错误：{e}")
