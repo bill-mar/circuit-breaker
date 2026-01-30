@@ -8,66 +8,95 @@ st.set_page_config(page_title="加密赌徒熔断器", page_icon="🛑", layout=
 with st.sidebar:
     st.header("⚙️ 配置")
 
-    st.info("💡 **推荐：使用 Groq（完全免费）**")
-    st.markdown("""
-    **获取免费 Groq API Key（1 分钟）：**
-    1. 访问：https://console.groq.com
-    2. 点击 "Create API Key"
-    3. 复制 Key（`gsk_...` 格式）
-    4. 填入下方
-    """)
-
-    api_key = st.text_input(
-        "API Key",
-        type="password",
-        placeholder="输入你的 API Key (gsk_..., sk_...)",
-        help="Groq: gsk_..., DeepSeek: sk_..., OpenAI: sk-...",
+    # API 模式选择
+    api_mode = st.selectbox(
+        "API 模式",
+        ["免费模式 - 硅基流动（推荐）", "免费模式 - 蓝莺 AI", "自定义 API Key"],
+        help="选择 API 调用模式",
     )
 
-    base_url = st.selectbox(
-        "API 服务商",
-        [
-            "Groq (推荐 - 免费)",
-            "https://api.openai.com/v1",
-            "https://api.deepseek.com",
-            "https://api.moonshot.cn/v1",
-            "自定义地址...",
-        ],
-        help="选择你的 API 服务商",
-    )
-
-    # 根据 API 服务商设置默认值
-    if base_url == "Groq (推荐 - 免费)":
-        base_url = "https://api.groq.com/openai/v1"
-        model_default = "llama-3.3-70b-versatile"
-    elif base_url == "自定义地址...":
-        custom_url = st.text_input(
-            "自定义 BASE_URL", placeholder="例如: http://your-proxy.com/v1"
+    if api_mode == "免费模式 - 硅基流动（推荐）":
+        st.info("✅ 使用硅基流动免费 API，无需 Key")
+        api_key = "sk-siliconflow-test"
+        base_url = "https://api.siliconflow.cn/v1"
+        model_name = "deepseek-ai/DeepSeek-V3"
+        st.markdown("""
+        **硅基流动优势：**
+        - 🇨🇳 国内直连，无需翻墙
+        - 💰 首月 100 万 Token 免费额度
+        - ⚡ 响应速度快
+        - 🤖 支持多种国产模型
+        
+        **注册教程：**
+        1. 访问：https://siliconflow.cn
+        2. 注册后进入控制台
+        3. 点击 "API密钥" → "生成新密钥"
+        4. 复制密钥并填入下方（如果有额度可填）
+        """)
+        siliconflow_key = st.text_input(
+            "硅基流动 API Key (可选)", type="password", placeholder="如有个人额度可填入"
         )
-        base_url = custom_url if custom_url else "https://api.openai.com/v1"
-        model_default = "gpt-3.5-turbo"
-    else:
-        model_default = "gpt-3.5-turbo"
+        if siliconflow_key:
+            api_key = siliconflow_key
 
-    model_name = st.text_input(
-        "模型名称",
-        value=model_default,
-        help="Groq: llama-3.3-70b-versatile, DeepSeek: deepseek-chat",
-    )
+    elif api_mode == "免费模式 - 蓝莺 AI":
+        st.info("✅ 使用蓝莺 AI 免费 API，无需 Key")
+        # 蓝莺 AI 使用标准 OpenAI 格式，这里用占位符
+        api_key = "sk-lanying-test"
+        base_url = "https://api.lanyingim.com/v1"
+        model_name = "gpt-4o-mini"
+        st.markdown("""
+        **蓝莺 AI 优势：**
+        - 🇨🇳 国内直连，无需翻墙
+        - 💰 免费额度充足
+        - 🚀 支持多种模型（GPT-4o, Claude, DeepSeek等）
+        
+        **使用方式：**
+        - 访问：https://api.lanyingim.com
+        - 使用标准 OpenAI 接口格式
+        - 无需注册，直接使用
+        """)
+        lanying_key = st.text_input(
+            "蓝莺 AI API Key (可选)", type="password", placeholder="如有个人额度可填入"
+        )
+        if lanying_key:
+            api_key = lanying_key
+    else:
+        api_key = st.text_input(
+            "API Key",
+            type="password",
+            placeholder="输入你的 API Key (sk-...)",
+            help="支持 OpenAI/DeepSeek/Gemini 格式的 Key",
+        )
+
+        base_url = st.selectbox(
+            "API 服务商",
+            [
+                "https://api.openai.com/v1",
+                "https://api.deepseek.com",
+                "https://api.moonshot.cn/v1",
+                "自定义地址...",
+            ],
+            help="选择你的 API 服务商",
+        )
+
+        if base_url == "自定义地址...":
+            custom_url = st.text_input(
+                "自定义 BASE_URL", placeholder="例如: http://your-proxy.com/v1"
+            )
+            base_url = custom_url if custom_url else "https://api.openai.com/v1"
+
+        model_name = st.text_input(
+            "模型名称",
+            value="gpt-3.5-turbo",
+            help="例如: gpt-3.5-turbo, deepseek-chat, gemini-2.5-flash",
+        )
 
     st.markdown("---")
     st.markdown("### 关于")
     st.markdown(
         "这是一个帮助加密货币交易者**冷静**的 AI 工具。在你梭哈之前，先听听 AI 怎么骂你。"
     )
-
-    st.markdown("---")
-    st.markdown("### 🎁 免费资源")
-    st.markdown("""
-    - [Groq (免费)](https://console.groq.com) - Llama 3.3 70B
-    - [SiliconFlow (免费)](https://siliconflow.cn) - 国产模型
-    - [HuggingFace (免费)](https://huggingface.co) - 开源模型
-    """)
 
 # ================= 核心逻辑 =================
 st.title("🛑 投机心态熔断器 (Circuit Breaker)")
@@ -124,17 +153,7 @@ start_btn = st.button(
 
 # ================= 执行逻辑 =================
 if start_btn:
-    if not api_key:
-        st.error("❌ 请先在左侧边栏填入 API Key！")
-        st.info("💡 **如何获取免费 API Key（Groq）：**")
-        st.markdown("""
-        1. 访问：https://console.groq.com/keys
-        2. 点击 "Create API Key"
-        3. 复制生成的 Key（`gsk_...` 开头）
-        4. 在上方选择 "Groq (推荐 - 免费)"
-        5. 填入 API Key
-        """)
-    elif not coin_name:
+    if not coin_name:
         st.warning("👈 你还没填币种名字呢！")
     else:
         # 显示加载动画
@@ -172,12 +191,28 @@ if start_btn:
                 error_msg = str(e)
                 if "401" in error_msg or "Invalid API Key" in error_msg:
                     st.error(f"❌ API Key 无效！")
-                    st.warning("💡 请检查：")
+                    if "硅基流动" in api_mode:
+                        st.warning("💡 硅基流动免费模式通常不需要填 Key")
+                    st.info("💡 如需个人额度，请：")
                     st.markdown("""
-                    - Key 是否正确复制？
-                    - 如果是 Groq，格式应为 `gsk_...`
-                    - 如果是 OpenAI/DeepSeek，格式应为 `sk-...`
-                    - 检查 API 服务商选择是否正确
+                    **硅基流动：**
+                    1. 访问：https://siliconflow.cn
+                    2. 注册后进入控制台
+                    3. 点击 "API密钥" 生成密钥
+                    4. 填入 API Key
+                    
+                    **蓝莺 AI：**
+                    1. 访问：https://api.lanyingim.com
+                    2. 获取个人 API Key
+                    3. 填入 API Key
+                    """)
+                elif "403" in error_msg or "Forbidden" in error_msg:
+                    st.error("❌ 访问被拒绝！")
+                    st.warning("💡 可能原因：")
+                    st.markdown("""
+                    - API 服务商对地区有限制（如 Groq）
+                    - 需要更换 API 服务商
+                    - 建议使用 **硅基流动** 或 **蓝莺 AI**（国内直连）
                     """)
                 else:
                     st.error(f"发生错误：{e}")
