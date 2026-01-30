@@ -7,8 +7,36 @@ st.set_page_config(page_title="加密赌徒熔断器", page_icon="🛑", layout=
 # ================= 侧边栏：配置 =================
 with st.sidebar:
     st.header("⚙️ 配置")
-    st.info("已配置本地反代服务：http://127.0.0.1:8045/v1")
-    st.markdown("模型：gemini-2.5-flash")
+
+    api_key = st.text_input(
+        "API Key",
+        type="password",
+        placeholder="输入你的 API Key (sk-...)",
+        help="支持 OpenAI/DeepSeek/Gemini 格式的 Key",
+    )
+
+    base_url = st.selectbox(
+        "API 服务商",
+        [
+            "https://api.openai.com/v1",
+            "https://api.deepseek.com",
+            "https://api.moonshot.cn/v1",
+            "自定义地址...",
+        ],
+        help="选择你的 API 服务商",
+    )
+
+    if base_url == "自定义地址...":
+        custom_url = st.text_input(
+            "自定义 BASE_URL", placeholder="例如: http://127.0.0.1:8045/v1"
+        )
+        base_url = custom_url if custom_url else "https://api.openai.com/v1"
+
+    model_name = st.text_input(
+        "模型名称",
+        value="gpt-3.5-turbo",
+        help="例如: gpt-3.5-turbo, deepseek-chat, gemini-2.5-flash",
+    )
 
     st.markdown("---")
     st.markdown("### 关于")
@@ -71,20 +99,22 @@ start_btn = st.button(
 
 # ================= 执行逻辑 =================
 if start_btn:
-    if not coin_name:
+    if not api_key:
+        st.error("❌ 请先在左侧边栏填入你的 API Key！")
+    elif not coin_name:
         st.warning("👈 你还没填币种名字呢！")
     else:
         # 显示加载动画
         with st.spinner(f"AI 正在调取 {coin_name} 的归零概率..."):
             try:
-                # 初始化客户端（使用反代服务）
+                # 初始化客户端（使用用户配置）
                 client = OpenAI(
-                    api_key="sk-e598bb7dcd944dc5ac1cd1aed0fa5055",
-                    base_url="http://127.0.0.1:8045/v1",
+                    api_key=api_key,
+                    base_url=base_url,
                 )
 
                 response = client.chat.completions.create(
-                    model="gemini-2.5-flash",
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {
