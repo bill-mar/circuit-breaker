@@ -2,7 +2,12 @@ import streamlit as st
 from openai import OpenAI
 
 # ================= 页面配置 =================
-st.set_page_config(page_title="加密赌徒熔断器", page_icon="🛑", layout="centered")
+st.set_page_config(
+    page_title="加密赌徒熔断器",
+    page_icon="🛑",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
 
 # ================= 侧边栏：配置 =================
 with st.sidebar:
